@@ -536,11 +536,41 @@ function updateDateDisplay() {
   el.textContent = formatDate(matchDate, { day:'numeric', month:'short' });
 }
 
-// Parse YYYY-MM-DD safely without timezone shift
+// Timezone-safe date formatter — never touches the Date object for display
+// Input must be YYYY-MM-DD string from the sheet or matchDate picker
 function formatDate(dateStr, options) {
-  const parts = dateStr.split('-');
-  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-  return d.toLocaleDateString('en-AU', options);
+  if (!dateStr || typeof dateStr !== 'string') return dateStr;
+
+  // Handle both YYYY-MM-DD and other formats
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!iso) {
+    // Not ISO format — try to display as-is
+    return dateStr;
+  }
+
+  const year  = parseInt(iso[1], 10);
+  const month = parseInt(iso[2], 10); // 1-12
+  const day   = parseInt(iso[3], 10);
+
+  const months    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthsFull= ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const weekdays  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const weekdaysFull = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // Calculate day of week using Zeller-style logic (no Date object)
+  // Tomohiko Sakamoto's algorithm
+  const t = [0,3,2,5,0,3,5,1,4,6,2,4];
+  let y = year;
+  if (month < 3) y--;
+  const dow = (y + Math.floor(y/4) - Math.floor(y/100) + Math.floor(y/400) + t[month-1] + day) % 7;
+
+  let parts = [];
+  if (options.weekday) parts.push(options.weekday === 'short' ? weekdays[dow] : weekdaysFull[dow]);
+  if (options.day)     parts.push(day);
+  if (options.month)   parts.push(options.month === 'short' ? months[month-1] : monthsFull[month-1]);
+  if (options.year)    parts.push(year);
+
+  return parts.join(' ');
 }
 
 // ============================================================
@@ -895,7 +925,6 @@ function loadResults() {
       return;
     }
     const results = (data.results || []).slice().reverse();
-    console.log('First result raw date:', results.length ? results[0].date : 'no results');
     if (!results.length) {
       document.getElementById('resultsList').innerHTML =
         '<div class="empty-state"><div class="empty-icon">🏆</div><p>No results yet.<br>Finalise your first game on the Game Day tab.</p></div>';
@@ -908,14 +937,11 @@ function loadResults() {
       if (our > their) { outcome = 'win';  label = 'Win';  }
       if (our < their) { outcome = 'loss'; label = 'Loss'; }
       let dateStr = r.date || '';
-      const rawDate = dateStr; // keep raw for debug
       try {
         if (dateStr) {
           dateStr = formatDate(dateStr, { weekday:'short', day:'numeric', month:'short', year:'numeric' });
         }
       } catch(e) {}
-      // TEMP DEBUG: show raw date alongside formatted
-      dateStr = dateStr + ' [raw: ' + rawDate + ']';
       return `<div class="result-card">
         <div class="result-card-header">
           <span class="result-card-date">${dateStr}</span>
