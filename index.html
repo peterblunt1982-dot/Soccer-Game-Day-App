@@ -533,8 +533,14 @@ function confirmDate() {
 function updateDateDisplay() {
   const el = document.getElementById('displayDate');
   if (!matchDate) { el.textContent = '—'; return; }
-  const d = new Date(matchDate + 'T00:00:00');
-  el.textContent = d.toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+  el.textContent = formatDate(matchDate, { day:'numeric', month:'short' });
+}
+
+// Parse YYYY-MM-DD safely without timezone shift
+function formatDate(dateStr, options) {
+  const parts = dateStr.split('-');
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  return d.toLocaleDateString('en-AU', options);
 }
 
 // ============================================================
@@ -903,8 +909,7 @@ function loadResults() {
       let dateStr = r.date || '';
       try {
         if (dateStr) {
-          const d = new Date(dateStr + 'T00:00:00');
-          dateStr = d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+          dateStr = formatDate(dateStr, { weekday:'short', day:'numeric', month:'short', year:'numeric' });
         }
       } catch(e) {}
       return `<div class="result-card">
