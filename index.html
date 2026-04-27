@@ -895,6 +895,7 @@ function loadResults() {
       return;
     }
     const results = (data.results || []).slice().reverse();
+    console.log('First result raw date:', results.length ? results[0].date : 'no results');
     if (!results.length) {
       document.getElementById('resultsList').innerHTML =
         '<div class="empty-state"><div class="empty-icon">🏆</div><p>No results yet.<br>Finalise your first game on the Game Day tab.</p></div>';
@@ -907,11 +908,14 @@ function loadResults() {
       if (our > their) { outcome = 'win';  label = 'Win';  }
       if (our < their) { outcome = 'loss'; label = 'Loss'; }
       let dateStr = r.date || '';
+      const rawDate = dateStr; // keep raw for debug
       try {
         if (dateStr) {
           dateStr = formatDate(dateStr, { weekday:'short', day:'numeric', month:'short', year:'numeric' });
         }
       } catch(e) {}
+      // TEMP DEBUG: show raw date alongside formatted
+      dateStr = dateStr + ' [raw: ' + rawDate + ']';
       return `<div class="result-card">
         <div class="result-card-header">
           <span class="result-card-date">${dateStr}</span>
