@@ -173,6 +173,9 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 .result-card-team{text-align:center;flex:1}
 .result-card-team-name{font-size:11px;color:var(--gray-mid);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .result-card-goals{font-size:30px;font-weight:900;color:var(--black);line-height:1}
+.scorer-line{margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-light);display:flex;flex-wrap:wrap;gap:8px}
+.scorer-goals{font-size:11px;color:var(--red);font-weight:600}
+.scorer-assists{font-size:11px;color:var(--gold-dk);font-weight:600}
 
 /* ===== PLAYER STATS TAB ===== */
 .stats-list{padding:0 12px;display:flex;flex-direction:column;gap:8px}
@@ -436,7 +439,7 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 // ============================================================
 // CONFIG — paste your Script URL here
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdI9_UJpc3Kd3vhJjcn20MROcswH7CpBII_HDjmfGmmVQ5X7My_qXwtj7HJDFkr6Qa/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-ia7oaoq9JirN0KU2s9yM8Z5h_NjmRKG0Nyczy5BoX4s6z4XCk_mSJXirqojwsfbT/exec';
 // ============================================================
 
 const STORAGE_KEY_URL  = 'redbacks_script_url';
@@ -958,9 +961,24 @@ function loadResults() {
             <div class="result-card-goals">${their}</div>
           </div>
         </div>
+        ${buildScorerLine(r.scorers)}
       </div>`;
     }).join('');
   });
+}
+
+function buildScorerLine(scorersJson) {
+  if (!scorersJson) return '';
+  try {
+    const stats = JSON.parse(scorersJson);
+    const goalScorers = [];
+    stats.forEach(s => {
+      const first = s.name.split(' ')[0];
+      if (s.goals > 0) goalScorers.push(s.goals > 1 ? first + ' x' + s.goals : first);
+    });
+    if (!goalScorers.length) return '';
+    return '<div class="scorer-line"><span class="scorer-goals">⚽ ' + goalScorers.join(', ') + '</span></div>';
+  } catch(e) { return ''; }
 }
 
 // ============================================================
