@@ -439,7 +439,7 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 // ============================================================
 // CONFIG — paste your Script URL here
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-ia7oaoq9JirN0KU2s9yM8Z5h_NjmRKG0Nyczy5BoX4s6z4XCk_mSJXirqojwsfbT/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyx-GCrZdufMP6mlDX0o6wtx98DDNVmfe1mQnFv7PX2s3q_3KzELsat8Lt5yiLf9C9C/exec';
 // ============================================================
 
 const STORAGE_KEY_URL  = 'redbacks_script_url';
@@ -764,13 +764,24 @@ function finaliseGame() {
     }
   });
 
+  // Build scorer string — "Name:goals,Name:goals" format, goals only
+  const scorerParts = [];
+  players.forEach(p => {
+    const g = sessionGoals[p.name] || 0;
+    const a = sessionAssists[p.name] || 0;
+    if (g > 0 || a > 0) {
+      scorerParts.push(p.name + ':' + g + ':' + a);
+    }
+  });
+  const scorerString = scorerParts.join('|');
+
   const params = new URLSearchParams({
     action:     'finaliseGame',
     date:       matchDate,
     opponent:   opponentName,
     ourScore:   ourFinal,
     theirScore: oppFinal,
-    stats:      JSON.stringify(statsList)
+    scorers:    scorerString
   });
 
   jsonp(scriptUrl + '?' + params.toString(), function(data, err) {
@@ -967,14 +978,16 @@ function loadResults() {
   });
 }
 
-function buildScorerLine(scorersJson) {
-  if (!scorersJson) return '';
+function buildScorerLine(scorerString) {
+  if (!scorerString) return '';
   try {
-    const stats = JSON.parse(scorersJson);
     const goalScorers = [];
-    stats.forEach(s => {
-      const first = s.name.split(' ')[0];
-      if (s.goals > 0) goalScorers.push(s.goals > 1 ? first + ' x' + s.goals : first);
+    scorerString.split('|').forEach(part => {
+      const bits = part.split(':');
+      if (bits.length < 2) return;
+      const firstName = bits[0].trim().split(' ')[0];
+      const goals = parseInt(bits[1]) || 0;
+      if (goals > 0) goalScorers.push(goals > 1 ? firstName + ' x' + goals : firstName);
     });
     if (!goalScorers.length) return '';
     return '<div class="scorer-line"><span class="scorer-goals">⚽ ' + goalScorers.join(', ') + '</span></div>';
