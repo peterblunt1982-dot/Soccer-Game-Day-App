@@ -75,6 +75,26 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 .tab-panel.active{display:block}
 .section-label{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gray-mid);font-weight:700;padding:20px 20px 10px}
 
+/* ===== NEXT MATCH CARD ===== */
+.next-match-card{background:var(--red-deep);border-radius:20px;padding:18px 20px;color:var(--white);position:relative;overflow:hidden}
+.next-match-card::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(192,0,30,0.3);border-radius:50%}
+.next-match-card::after{content:'';position:absolute;bottom:-30px;left:-10px;width:80px;height:80px;background:rgba(255,255,255,0.04);border-radius:50%}
+.next-match-loading{text-align:center;padding:12px;color:rgba(247,221,225,0.5);font-size:12px}
+.next-match-badge{display:inline-block;background:var(--red);border-radius:20px;padding:3px 10px;font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--white);margin-bottom:12px;position:relative;z-index:1}
+.next-match-vs{display:flex;align-items:center;gap:10px;margin-bottom:14px;position:relative;z-index:1}
+.next-match-team{flex:1}
+.next-match-team-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:3px}
+.next-match-team-name{font-size:15px;font-weight:900;color:var(--white);line-height:1.1}
+.next-match-divider{font-size:12px;font-weight:900;color:rgba(255,255,255,0.25);flex-shrink:0}
+.next-match-details{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+.next-match-detail{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.08);border-radius:20px;padding:5px 10px}
+.next-match-detail-icon{font-size:12px}
+.next-match-detail-text{font-size:11px;color:rgba(255,255,255,0.8);font-weight:600}
+.next-match-detail-text.empty{color:rgba(255,255,255,0.3);font-style:italic}
+.next-match-empty{text-align:center;padding:16px;color:rgba(247,221,225,0.4);font-size:12px;line-height:1.6}
+.btn-use-next-match{width:100%;margin-top:14px;padding:11px;background:rgba(255,255,255,0.12);color:var(--white);font-size:12px;font-weight:800;font-family:inherit;border:1px solid rgba(255,255,255,0.15);border-radius:12px;cursor:pointer;letter-spacing:0.5px;position:relative;z-index:1}
+.btn-use-next-match:active{background:rgba(255,255,255,0.2)}
+
 /* ===== GAME DAY — SETUP PHASE ===== */
 .gameday-setup{padding:16px 16px 0}
 .gd-setup-card{background:var(--white);border-radius:20px;padding:20px;box-shadow:var(--shadow-sm)}
@@ -245,6 +265,28 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 </head>
 <body>
 
+<!-- LOADING SCREEN -->
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--red-deep);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;">
+  <div style="position:relative;width:110px;height:110px;margin-bottom:32px;">
+    <!-- Spinning ring -->
+    <svg style="position:absolute;inset:0;animation:spinRing 2s linear infinite" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="55" cy="55" r="50" stroke="rgba(192,0,30,0.25)" stroke-width="4"/>
+      <path d="M55 5 A50 50 0 0 1 105 55" stroke="#C0001E" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <!-- Logo in centre -->
+    <div style="position:absolute;inset:10px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <img src="https://elthamredbacks.com.au/wp-content/uploads/2025/07/ERvKPLINEUP-1-127x137.png" style="width:72px;height:72px;object-fit:contain;" onerror="this.parentNode.innerHTML='🕷️'">
+    </div>
+  </div>
+  <div style="font-size:20px;font-weight:900;color:white;letter-spacing:-0.3px;margin-bottom:6px;">Eltham <span style="color:var(--red)">Redbacks</span></div>
+  <div style="font-size:12px;color:rgba(247,221,225,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:32px;">Match Day App</div>
+  <div id="loadingMsg" style="font-size:13px;color:rgba(247,221,225,0.5);font-weight:500;">Connecting to Google Sheets…</div>
+</div>
+
+<style>
+@keyframes spinRing { to { transform: rotate(360deg); } }
+</style>
+
 <!-- SETUP SCREEN -->
 <div class="setup-screen" id="setupScreen">
   <div class="setup-logo">
@@ -303,11 +345,21 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 
       <!-- PHASE: SETUP -->
       <div id="gd-setup">
-        <div class="section-label">Set Up Match</div>
+        <div class="section-label">Next Match</div>
         <div class="gameday-setup">
-          <div class="gd-setup-card">
-            <h3>New Match</h3>
-            <p>Configure the match before kick-off</p>
+
+          <!-- NEXT MATCH INFO CARD -->
+          <div class="next-match-card" id="nextMatchCard">
+            <div class="next-match-loading">
+              <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0 auto 8px;"></div>
+              <span>Loading match info…</span>
+            </div>
+          </div>
+
+          <!-- SETUP FORM -->
+          <div class="gd-setup-card" style="margin-top:12px;">
+            <h3>Kick Off Setup</h3>
+            <p>Confirm details then start the match</p>
             <div class="opponent-setup-row">
               <label>Opponent Team</label>
               <input type="text" id="setupOpponent" placeholder="e.g. Bundoora FC" autocorrect="off">
@@ -439,7 +491,7 @@ body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;back
 // ============================================================
 // CONFIG — paste your Script URL here
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyx-GCrZdufMP6mlDX0o6wtx98DDNVmfe1mQnFv7PX2s3q_3KzELsat8Lt5yiLf9C9C/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxeGmDEUMLRmgwjz1BPwXiKRRXxQnLPjHM9uo9FchG4lpo4ARcDkq4Me9JTimeX8QL/exec';
 // ============================================================
 
 const STORAGE_KEY_URL  = 'redbacks_script_url';
@@ -448,6 +500,7 @@ const STORAGE_KEY_DATE = 'redbacks_match_date';
 let scriptUrl  = '';
 let matchDate  = '';
 let players    = [];          // loaded from sheet
+let cachedResults = null;     // cached from sheet on startup
 let sessionGoals   = {};      // goals scored this session (by name)
 let sessionAssists = {};      // assists this session
 let currentSort    = 'goals';
@@ -468,6 +521,7 @@ function init() {
   scriptUrl = SCRIPT_URL || localStorage.getItem(STORAGE_KEY_URL) || '';
   matchDate = localStorage.getItem(STORAGE_KEY_DATE) || todayStr();
   if (!scriptUrl) {
+    hideLoadingScreen();
     document.getElementById('setupScreen').classList.remove('hidden');
     document.getElementById('mainApp').style.display = 'none';
   } else {
@@ -476,6 +530,19 @@ function init() {
     updateDateDisplay();
     loadPlayers();
   }
+}
+
+function hideLoadingScreen() {
+  const el = document.getElementById('loadingScreen');
+  if (!el) return;
+  el.style.transition = 'opacity 0.4s ease';
+  el.style.opacity = '0';
+  setTimeout(() => el.style.display = 'none', 400);
+}
+
+function setLoadingMsg(msg) {
+  const el = document.getElementById('loadingMsg');
+  if (el) el.textContent = msg;
 }
 
 function todayStr() { return new Date().toISOString().split('T')[0]; }
@@ -508,7 +575,7 @@ function switchTab(name) {
     document.getElementById('tab-' + t).classList.toggle('active', t === name);
     document.getElementById('panel-' + t).classList.toggle('active', t === name);
   });
-  if (name === 'history') loadResults();
+  if (name === 'history') renderResults();
   if (name === 'stats')   renderStats();
   if (name === 'squad')   renderSquadList();
 }
@@ -609,6 +676,129 @@ function showLivePhase() {
 }
 
 // ============================================================
+// SCREEN LOCK PREVENTION
+// iOS doesn't support Wake Lock API — instead we play a silent
+// audio loop which prevents the screen from sleeping on iPhone.
+// MUST be called from a direct user tap to work on iOS.
+// ============================================================
+let silentAudioCtx = null;
+let silentAudioSrc = null;
+
+function startScreenLock() {
+  // Try native Wake Lock (Android Chrome)
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+  }
+
+  // Silent looping audio — prevents iOS screen sleep
+  try {
+    // Always create a fresh context from the user gesture
+    if (silentAudioCtx) {
+      try { silentAudioSrc.stop(); silentAudioCtx.close(); } catch(e) {}
+    }
+    silentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // iOS requires context.resume() after creation
+    silentAudioCtx.resume().then(() => {
+      // Create a 1-second silent buffer and loop it forever
+      const sampleRate = silentAudioCtx.sampleRate;
+      const buf = silentAudioCtx.createBuffer(1, sampleRate, sampleRate);
+      // Fill with near-zero values (not true silence — iOS mutes true silence)
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.00001; // inaudible noise
+      }
+      silentAudioSrc = silentAudioCtx.createBufferSource();
+      silentAudioSrc.buffer = buf;
+      silentAudioSrc.loop = true;
+      silentAudioSrc.connect(silentAudioCtx.destination);
+      silentAudioSrc.start(0);
+    });
+  } catch(e) {}
+}
+
+function stopScreenLock() {
+  try {
+    if (silentAudioSrc) silentAudioSrc.stop();
+    if (silentAudioCtx) silentAudioCtx.close();
+  } catch(e) {}
+  silentAudioSrc = null;
+  silentAudioCtx = null;
+}
+
+// Re-acquire on page visibility change (e.g. coming back from another app)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (timerRunning) {
+      // Snap timer to correct value based on real elapsed time
+      syncTimerFromWallClock();
+      updateTimerDisplay();
+      // Check if timer expired while phone was locked
+      if (timerSeconds <= 0) {
+        timerSeconds = 0;
+        clearInterval(timerInterval);
+        timerRunning   = false;
+        timerStartedAt = null;
+        stopScreenLock();
+        updateTimerUI();
+        if (matchPhase === 'h1') {
+          matchPhase = 'halftime';
+          fireAlarm(false);
+          showHalfTimeBanner();
+        } else if (matchPhase === 'h2') {
+          matchPhase = 'fulltime';
+          fireAlarm(true);
+          showFullTimeBanner();
+        }
+      } else {
+        // Still running — resume screen lock
+        if (silentAudioCtx) silentAudioCtx.resume().catch(() => {});
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
+      }
+    }
+  }
+});
+
+// ============================================================
+// ALARM — loud audio tone at half/full time
+// Works on iOS because the AudioContext was already started
+// by the user tapping the Start button earlier
+// ============================================================
+function fireAlarm(isFullTime) {
+  try {
+    // Reuse the existing audio context if available (iOS requires this)
+    const ctx = silentAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume().then(() => {
+      const beeps = isFullTime
+        ? [880, 0, 880, 0, 880, 0, 660, 0, 660, 0, 1100, 0, 1100]
+        : [660, 0, 660, 0, 660];
+      let t = ctx.currentTime;
+      beeps.forEach(freq => {
+        if (freq === 0) { t += 0.15; return; }
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(1.0, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.start(t);
+        osc.stop(t + 0.45);
+        t += 0.6;
+      });
+    });
+  } catch(e) {}
+
+  // Vibration (Android)
+  if ('vibrate' in navigator) {
+    navigator.vibrate(isFullTime
+      ? [500,200,500,200,500,200,1000]
+      : [400,150,400,150,400]);
+  }
+}
+
+// ============================================================
 // GAME DAY — LIVE SCORE
 // ============================================================
 function ourGoalCount() {
@@ -624,34 +814,50 @@ function adjustOppScore(delta) {
 // ============================================================
 // TIMER
 // ============================================================
+let timerStartedAt   = null; // wall-clock ms when timer last started
+let timerSecondsAtStart = 0; // timerSeconds value when last started
+
 function handleTimerBtn() {
   if (!timerRunning) {
     timerRunning = true;
-    timerInterval = setInterval(tickTimer, 1000);
+    timerStartedAt      = Date.now();
+    timerSecondsAtStart = timerSeconds;
+    timerInterval = setInterval(tickTimer, 500); // poll every 500ms for accuracy
+    startScreenLock();
   } else {
     timerRunning = false;
     clearInterval(timerInterval);
+    stopScreenLock();
   }
   updateTimerUI();
 }
 
+function syncTimerFromWallClock() {
+  if (!timerRunning || !timerStartedAt) return;
+  const elapsed = Math.floor((Date.now() - timerStartedAt) / 1000);
+  timerSeconds  = Math.max(0, timerSecondsAtStart - elapsed);
+}
+
 function tickTimer() {
+  syncTimerFromWallClock(); // always use real wall-clock time
+  updateTimerDisplay();
   if (timerSeconds <= 0) {
     clearInterval(timerInterval);
     timerRunning = false;
     timerSeconds = 0;
+    timerStartedAt = null;
+    stopScreenLock();
     updateTimerUI();
     if (matchPhase === 'h1') {
       matchPhase = 'halftime';
+      fireAlarm(false);
       showHalfTimeBanner();
     } else if (matchPhase === 'h2') {
       matchPhase = 'fulltime';
+      fireAlarm(true);
       showFullTimeBanner();
     }
-    return;
   }
-  timerSeconds--;
-  updateTimerDisplay();
 }
 
 function updateTimerUI() {
@@ -691,10 +897,13 @@ function updateTimerDisplay() {
 }
 
 function startSecondHalf() {
-  matchPhase   = 'h2';
-  timerSeconds = halfMins * 60;
-  timerRunning = false;
+  matchPhase          = 'h2';
+  timerSeconds        = halfMins * 60;
+  timerSecondsAtStart = halfMins * 60;
+  timerStartedAt      = null;
+  timerRunning        = false;
   clearInterval(timerInterval);
+  stopScreenLock();
   document.getElementById('btnTimer').onclick = handleTimerBtn;
   updateTimerUI();
   dismissBanner();
@@ -791,6 +1000,8 @@ function finaliseGame() {
       showToast('Failed to save — check connection','error'); return;
     }
     showToast('Game finalised! 🏆','success');
+    cachedResults = null; // force history to re-fetch next time
+    fetchResults();       // pre-warm the cache in background
     resetGameDay();
   });
 }
@@ -804,6 +1015,7 @@ function resetGameDay() {
   timerSeconds = halfMins * 60;
   timerRunning = false;
   clearInterval(timerInterval);
+  stopScreenLock();
   document.getElementById('setupOpponent').value = '';
   document.getElementById('gd-setup').style.display    = 'block';
   document.getElementById('gd-live').style.display     = 'none';
@@ -839,22 +1051,46 @@ function jsonp(url, callback) {
 // LOAD PLAYERS
 // ============================================================
 function loadPlayers() {
+  setLoadingMsg('Loading squad from Google Sheets…');
   ['livePlayerList','squadPlayerList'].forEach(id => {
     document.getElementById(id).innerHTML =
       '<div class="loading-state"><div class="spinner"></div>Loading squad…</div>';
   });
+
+  // Fetch players and results in parallel
+  let playersDone  = false;
+  let resultsDone  = false;
+
+  function checkAllDone() {
+    if (playersDone && resultsDone) hideLoadingScreen();
+  }
+
   jsonp(scriptUrl + '?action=getPlayers', function(data, err) {
+    playersDone = true;
     if (err || !data || data.error) {
       const msg = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not connect.<br>Check Script URL and deployment.</p></div>';
       document.getElementById('livePlayerList').innerHTML  = msg;
       document.getElementById('squadPlayerList').innerHTML = msg;
-      showToast('Connection error','error'); return;
+      showToast('Connection error','error');
+    } else {
+      players = data.players || [];
+      renderLivePlayerList();
+      renderSquadList();
+      showToast(players.length + ' players loaded','success');
     }
-    players = data.players || [];
-    renderLivePlayerList();
-    renderSquadList();
-    showToast(players.length + ' players loaded','success');
+    checkAllDone();
   });
+
+  jsonp(scriptUrl + '?action=getResults', function(data, err) {
+    resultsDone = true;
+    if (!err && data && !data.error) {
+      cachedResults = data.results || [];
+    }
+    checkAllDone();
+  });
+
+  // Fetch next match info in background (non-blocking)
+  fetchNextMatch();
 }
 
 // ============================================================
@@ -927,55 +1163,145 @@ function recordStat(idx, type, listType) {
 }
 
 // ============================================================
+// NEXT MATCH INFO
+// ============================================================
+function fetchNextMatch() {
+  jsonp(scriptUrl + '?action=getNextMatch', function(data, err) {
+    if (err || !data || data.error) {
+      renderNextMatch(null);
+    } else {
+      renderNextMatch(data.match || null);
+    }
+  });
+}
+
+function renderNextMatch(match) {
+  const card = document.getElementById('nextMatchCard');
+  if (!match || !match.opponent) {
+    card.innerHTML = `<div class="next-match-empty">
+      No upcoming match info yet.<br>Fill in the <strong>Next Match</strong> sheet tab to show details here.
+    </div>`;
+    return;
+  }
+
+  const dateStr = match.date ? formatDate(match.date, { weekday:'long', day:'numeric', month:'long' }) : '—';
+  const time    = match.time    || '';
+  const venue   = match.venue   || '';
+  const halves  = match.halves  || '';
+  const round   = match.round   || '';
+
+  card.innerHTML = `
+    ${round ? '<div class="next-match-badge">' + round + '</div>' : '<div class="next-match-badge">Upcoming Match</div>'}
+    <div class="next-match-vs">
+      <div class="next-match-team">
+        <div class="next-match-team-label">Home</div>
+        <div class="next-match-team-name">Eltham Redbacks</div>
+      </div>
+      <div class="next-match-divider">VS</div>
+      <div class="next-match-team" style="text-align:right">
+        <div class="next-match-team-label">Away</div>
+        <div class="next-match-team-name">${match.opponent}</div>
+      </div>
+    </div>
+    <div class="next-match-details">
+      <div class="next-match-detail">
+        <span class="next-match-detail-icon">📅</span>
+        <span class="next-match-detail-text">${dateStr}</span>
+      </div>
+      ${time ? `<div class="next-match-detail"><span class="next-match-detail-icon">🕐</span><span class="next-match-detail-text">${time}</span></div>` : ''}
+      ${venue ? `<div class="next-match-detail"><span class="next-match-detail-icon">📍</span><span class="next-match-detail-text">${venue}</span></div>` : ''}
+      ${halves ? `<div class="next-match-detail"><span class="next-match-detail-icon">⏱</span><span class="next-match-detail-text">${halves} min halves</span></div>` : ''}
+    </div>
+    <button class="btn-use-next-match" onclick="useNextMatch()">↓ Use This Match Info</button>
+  `;
+
+  // Store for auto-populate
+  card._matchData = match;
+}
+
+function useNextMatch() {
+  const card  = document.getElementById('nextMatchCard');
+  const match = card._matchData;
+  if (!match) return;
+  if (match.opponent) document.getElementById('setupOpponent').value = match.opponent;
+  if (match.halves)  {
+    const mins = parseInt(match.halves);
+    if (!isNaN(mins)) {
+      halfMins = Math.max(5, Math.min(60, mins));
+      document.getElementById('halfMinsDisplay').textContent = halfMins;
+    }
+  }
+  if (match.date) {
+    matchDate = match.date;
+    localStorage.setItem(STORAGE_KEY_DATE, matchDate);
+    updateDateDisplay();
+  }
+  showToast('Match info loaded ✓', 'success');
+}
+
+// ============================================================
 // LOAD RESULTS HISTORY
 // ============================================================
-function loadResults() {
-  document.getElementById('resultsList').innerHTML =
-    '<div class="loading-state"><div class="spinner"></div>Loading…</div>';
+function renderResults() {
+  if (cachedResults !== null) {
+    // Render instantly from cache — no spinner
+    renderResultsList(cachedResults);
+  } else {
+    // First time — fetch with spinner
+    document.getElementById('resultsList').innerHTML =
+      '<div class="loading-state"><div class="spinner"></div>Loading…</div>';
+    fetchResults();
+  }
+}
+
+function fetchResults() {
   jsonp(scriptUrl + '?action=getResults', function(data, err) {
     if (err || !data || data.error) {
       document.getElementById('resultsList').innerHTML =
         '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load results.</p></div>';
       return;
     }
-    const results = (data.results || []).slice().reverse();
-    if (!results.length) {
-      document.getElementById('resultsList').innerHTML =
-        '<div class="empty-state"><div class="empty-icon">🏆</div><p>No results yet.<br>Finalise your first game on the Game Day tab.</p></div>';
-      return;
-    }
-    document.getElementById('resultsList').innerHTML = results.map(r => {
-      const our   = parseInt(r.ourScore)   || 0;
-      const their = parseInt(r.theirScore) || 0;
-      let outcome = 'draw', label = 'Draw';
-      if (our > their) { outcome = 'win';  label = 'Win';  }
-      if (our < their) { outcome = 'loss'; label = 'Loss'; }
-      let dateStr = r.date || '';
-      try {
-        if (dateStr) {
-          dateStr = formatDate(dateStr, { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-        }
-      } catch(e) {}
-      return `<div class="result-card">
-        <div class="result-card-header">
-          <span class="result-card-date">${dateStr}</span>
-          <span class="result-card-outcome outcome-${outcome}">${label}</span>
-        </div>
-        <div class="result-card-score">
-          <div class="result-card-team">
-            <div class="result-card-team-name">Eltham Redbacks</div>
-            <div class="result-card-goals" style="color:${outcome==='win'?'var(--green)':outcome==='loss'?'var(--red)':'var(--black)'}">${our}</div>
-          </div>
-          <div class="result-card-vs" style="font-size:20px;font-weight:900;color:var(--gray-light)">—</div>
-          <div class="result-card-team">
-            <div class="result-card-team-name">${r.opponent || '—'}</div>
-            <div class="result-card-goals">${their}</div>
-          </div>
-        </div>
-        ${buildScorerLine(r.scorers)}
-      </div>`;
-    }).join('');
+    cachedResults = data.results || [];
+    renderResultsList(cachedResults);
   });
+}
+
+function renderResultsList(results) {
+  const reversed = results.slice().reverse();
+  if (!reversed.length) {
+    document.getElementById('resultsList').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">🏆</div><p>No results yet.<br>Finalise your first game on the Game Day tab.</p></div>';
+    return;
+  }
+  document.getElementById('resultsList').innerHTML = reversed.map(r => {
+    const our   = parseInt(r.ourScore)   || 0;
+    const their = parseInt(r.theirScore) || 0;
+    let outcome = 'draw', label = 'Draw';
+    if (our > their) { outcome = 'win';  label = 'Win';  }
+    if (our < their) { outcome = 'loss'; label = 'Loss'; }
+    let dateStr = r.date || '';
+    try {
+      if (dateStr) dateStr = formatDate(dateStr, { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    } catch(e) {}
+    return `<div class="result-card">
+      <div class="result-card-header">
+        <span class="result-card-date">${dateStr}</span>
+        <span class="result-card-outcome outcome-${outcome}">${label}</span>
+      </div>
+      <div class="result-card-score">
+        <div class="result-card-team">
+          <div class="result-card-team-name">Eltham Redbacks</div>
+          <div class="result-card-goals" style="color:${outcome==='win'?'var(--green)':outcome==='loss'?'var(--red)':'var(--black)'}">${our}</div>
+        </div>
+        <div class="result-card-vs" style="font-size:20px;font-weight:900;color:var(--gray-light)">—</div>
+        <div class="result-card-team">
+          <div class="result-card-team-name">${r.opponent || '—'}</div>
+          <div class="result-card-goals">${their}</div>
+        </div>
+      </div>
+      ${buildScorerLine(r.scorers)}
+    </div>`;
+  }).join('');
 }
 
 function buildScorerLine(scorerString) {
